@@ -1,0 +1,15 @@
+.git
+.local
+.agents
+.cache
+.pythonlibs
+.venv
+__pycache__
+node_modules
+dist
+coverage
+attached_assets
+.env
+.env.*
+!.env.example
+*.tsbuildinfo

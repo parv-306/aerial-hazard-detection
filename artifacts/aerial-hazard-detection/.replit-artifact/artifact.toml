@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Aerial Hazard Detection"
+description = "A simulation-only industrial safety prototype that streams drone gas sensor telemetry into a live hazard grid with transparent risk estimates, packet diagnostics, and operator alert controls."
+version = "1.0.0"
+id = "artifacts/aerial-hazard-detection"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19538
+
+[services.development]
+run = "pnpm --filter @workspace/aerial-hazard-detection run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/aerial-hazard-detection", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/aerial-hazard-detection/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19538"
+BASE_PATH = "/"

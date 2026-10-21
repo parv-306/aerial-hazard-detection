@@ -1,0 +1,74 @@
+Technovision 2026: Zero Syntax (No Code Hackathon)
+Hi Manas Varade,
+
+Dear Team Git Push and Pray,
+
+Congratulations on making it to the Top 30 teams and qualifying for Round 2 – The Final Round!
+
+Your team has successfully cleared the first round, and now it's time to take your idea, Aerial Location of Hazardous Atmosphere, to the next level.
+
+Your 24-hour challenge starts now!
+
+You have the next 24 hours to implement the assigned twist into your existing project.
+
+Your assigned twist: "The Lossy Link"
+
+Replace the existing store-then-predict approach with a streaming hazard grid that can robustly handle live sensor data feeds over unreliable drone telemetry.
+
+1. Streaming Hazard Grid
+
+Divide the site into approximately 10-metre cells using geohash, H3, or a similar spatial indexing system.
+
+Maintain in-memory state for each cell, including the latest reading from each sensor, timestamps, and confidence that decays as readings become older.
+
+Run the existing SVM incrementally on each incoming frame using fused features from the cell, its eight neighbouring cells, and Weather API temperature and wind data.
+
+Use PostgreSQL only as an asynchronous data sink. The map must read its live state from the streaming grid.
+
+2. Alert State Machine and Escalation
+
+Implement an alert state machine for every cell with hysteresis: raise an alert after three consecutive high-risk frames and clear it only after five minutes below the risk threshold.
+
+Alerts must repeat or escalate until acknowledged.
+
+Ensure acknowledgements persist across server restarts so that the alert state is not lost when the application restarts.
+
+3. Lossy UDP Drone Link
+
+Simulate a lossy UDP drone link carrying fixed-size binary frames of no more than 32 bytes. Each frame must contain the drone ID, a 16-bit sequence number, timestamp, fixed-point latitude and longitude, six quantized 16-bit sensor values, and a CRC16 checksum.
+
+Parse incoming frames byte by byte. Do not use JSON or HTTP for the drone telemetry protocol.
+
+Reject frames with invalid CRC16 checksums, deduplicate repeated frames, and reorder frames within a two-second window.
+
+Test the implementation with a network injector that drops 30% of frames and duplicates 10% of frames.
+
+Cells that have not received recent frames must be visibly marked as "Stale" on the map.
+
+The original store-then-predict pipeline must continue to work. The jury will have a copy of this twist and will verify your implementation live. Implementing the assigned changes earns bonus points, while failing to include them results in a deduction.
+
+Mandatory Instructions:
+
+GitHub Repository Submission: Fill out this Google Form immediately and submit your GitHub repository link. This is mandatory for all teams so we can track your project's progress.
+
+WhatsApp Group: All finalists must have their team leader or at least one team member join the official WhatsApp group for further communication and important updates.
+
+Final Round – 22nd October: All qualified teams must report to the college on 22nd October to implement and demonstrate the assigned twist and present their updated solution and idea to the jury.
+
+Make the most of these 24 hours, think creatively, and give it your best shot. We're excited to see how you adapt your ideas to this challenge!
+
+All the best for the final round!
+
+Best regards,
+Team CSI
+MIT World Peace University
+
+View Opportunity
+Unstop logo
+Join our evergrowing unstoppable community
+
+Instagram Icon Linkedin Icon Telegram Icon Youtube Icon
+Get the Unstop app
+
+Play Store Icon App Store Icon
+Queries? We're just one email away: support@unstop.com © 2026 Unstop. All rights reserved

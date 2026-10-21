@@ -1,0 +1,172 @@
+# Project: Aerial Location of Hazardous Atmosphere
+## Technovision 2026 — Round 2 Final Prototype
+
+Act as a senior full-stack engineer, Python developer, machine-learning engineer, and UI/UX designer. Build a complete, working, real-time web application for detecting and visualizing potential atmospheric hazards using simulated drone sensor data.
+
+Do not create only a frontend mockup. Implement the backend, frontend, UDP communication, database, prediction pipeline, alert system, and tests.
+
+### 1. Technology stack
+- Backend: Python, FastAPI, asyncio, UDP sockets
+- Frontend: React, Vite, TypeScript
+- Database: PostgreSQL
+- Machine learning: scikit-learn SVM
+- Live updates: WebSockets
+- Deployment: Docker Compose and environment variables
+
+### 2. Drone simulator and binary protocol
+Create a simulated drone that generates six sensor readings, latitude, longitude, sequence number, timestamp, and status flags.
+
+Implement an exactly 32-byte binary frame:
+- Byte 0: Sync byte 0xA5
+- Byte 1: Drone ID
+- Bytes 2–3: uint16 sequence number
+- Bytes 4–7: uint32 timestamp in milliseconds
+- Bytes 8–11: signed int32 latitude multiplied by 10^7
+- Bytes 12–15: signed int32 longitude multiplied by 10^7
+- Bytes 16–27: six uint16 sensor values
+- Bytes 28–29: status flags
+- Bytes 30–31: CRC-16/CCITT-FALSE over bytes 0–29
+
+Implement a byte-by-byte parser, CRC validation, corrupted-frame rejection, resynchronization, duplicate detection, sequence-number wraparound, and a two-second packet reordering window.
+
+### 3. Network fault injector
+Create a UDP proxy that simulates:
+- 30% packet loss
+- 10% duplication
+- Random delay up to 1.5 seconds
+- Optional packet corruption
+- A fixed random seed for repeatable demonstrations
+
+Display received frames, valid frames, CRC failures, duplicates, reordered frames, and estimated packet loss.
+
+### 4. Real-time hazard grid
+Build an in-memory grid using 10 m × 10 m square cells. Project geographic coordinates to local metre coordinates around a configurable site origin.
+
+Each cell must maintain:
+- Latest values from six sensors
+- Individual sensor timestamps
+- Confidence based on reading freshness
+- Hazard risk score and prediction
+- Alert state
+- Stale/fresh status
+
+Calculate confidence using exponential decay. Incorporate eight neighbouring cells, temperature, and wind direction into the hazard features. Cache weather updates every 60 seconds, with a mock provider and fallback to the last known weather reading.
+
+A cell becomes stale after a configurable timeout, defaulting to 10 seconds. Display stale cells in hatched grey and label them Stale. Never treat missing data as proof of safety.
+
+### 5. Machine-learning prediction
+Implement an SVM classification pipeline using sensor, neighbouring-cell, and weather features.
+
+- Inspect and reuse an existing model if supplied.
+- Retrain the model when the feature schema changes.
+- If no labelled dataset exists, generate a clearly labelled synthetic demo dataset.
+- Keep training and inference feature order identical.
+- Show risk scores and model status.
+- Clearly distinguish simulated predictions from validated real-world hazard detection.
+
+### 6. Alert state machine
+Implement these states:
+
+NORMAL → PENDING → ALERT → ESCALATED → ACKED → CLEARING → NORMAL
+
+Requirements:
+- Raise an alert after three consecutive accepted high-risk frames for the same cell.
+- Escalate to level 2 after two minutes and level 3 after five minutes if unacknowledged.
+- Repeat level-appropriate notifications every 30 seconds while unacknowledged.
+- Clear an alert only after five continuous minutes of fresh, low-risk observations.
+- Reset the clearing timer whenever a high-risk observation occurs.
+- Never clear an alert because a cell becomes stale.
+- Provide acknowledgement controls for operators.
+- Assign a unique ID to every alert instance.
+- Preserve alert states, acknowledgement details, and escalation deadlines across server restarts.
+
+Use PostgreSQL transactions for durable alert state changes. Add tests for acknowledgement, escalation, clearing, and restart recovery.
+
+### 7. Database and legacy compatibility
+Keep the live grid in memory as the source of current dashboard state.
+
+Use a bounded asynchronous queue and background batch writer for telemetry storage. The live processing path must not wait for database inserts.
+
+Persist alerts and acknowledgements separately using durable transactions.
+
+If an existing project is supplied:
+- Inspect it before making changes.
+- Preserve its existing ingestion pipeline, PostgreSQL tables, and batch prediction.
+- Add the new live pipeline alongside the old one.
+- Keep the original interface available at /legacy.
+- Do not overwrite existing data or credentials.
+
+### 8. Frontend dashboard
+Create a modern, responsive, professional control-room dashboard with:
+- Live 10 m hazard grid
+- Colour-coded risk levels
+- Stale cells with grey hatching
+- Sensor readings and confidence indicators
+- Temperature and wind information
+- Active alerts and escalation levels
+- Acknowledge-alert buttons
+- UDP packet statistics
+- CRC errors, duplicates, and estimated packet loss
+- Connection and backend health indicators
+- Separate legacy-view access
+
+Use WebSockets for live updates. Every displayed metric must come from the backend or be clearly identified as sample data. Buttons must perform real actions.
+
+### 9. API endpoints
+Provide endpoints for:
+- Application health
+- Current grid and individual cell details
+- Active alerts
+- Alert acknowledgement
+- Network statistics
+- Legacy pipeline status
+
+Validate requests, handle errors, and protect state-changing endpoints.
+
+### 10. Testing
+Write and execute tests for:
+- Binary frame length and field encoding
+- CRC validation and corrupted frames
+- Parser resynchronization
+- Duplicate detection and sequence wraparound
+- Packet reordering and loss statistics
+- Grid indexing and neighbour lookup
+- Confidence decay and stale cells
+- Three-frame alert triggering
+- Five-minute clearing logic
+- Escalation and acknowledgement
+- PostgreSQL persistence and restart recovery
+- Telemetry queue overflow and database failures
+- End-to-end simulator-to-dashboard integration
+
+Use a simulated clock or accelerated test mode for time-dependent rules.
+
+### 11. Setup and documentation
+Provide:
+- Complete project source code
+- requirements.txt and package.json
+- Database schema and migrations
+- Docker Compose configuration
+- Example environment configuration without secrets
+- README with Windows PowerShell and Linux/macOS setup commands
+- Exact startup, shutdown, and testing commands
+- Troubleshooting instructions
+- A live hackathon demonstration checklist
+
+### 12. Implementation instructions
+Build incrementally in this order:
+
+1. Project setup and binary UDP protocol.
+2. Drone simulator and network fault injector.
+3. In-memory hazard grid and stale-cell handling.
+4. SVM and weather integration.
+5. Persistent alert state machine.
+6. PostgreSQL telemetry sink.
+7. React dashboard and WebSocket updates.
+8. Legacy integration and final testing.
+
+After each phase, run tests, fix errors, and report what is genuinely working.
+
+Do not claim a feature is implemented unless its code exists and its tests pass. Do not fabricate test results, model accuracy, sensor measurements, or real-world safety guarantees.
+
+**Start now:** inspect the workspace, show the implementation plan and project structure, then implement Phase 1 and verify it before proceeding. Continue through all phases, documenting anything incomplete and providing exact commands to run the finished prototype.

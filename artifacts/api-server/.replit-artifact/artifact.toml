@@ -30,3 +30,15 @@ NODE_ENV = "production"
 
 [services.production.health.startup]
 path = "/api/healthz"
+
+
+[[services]]
+localPort = 8000
+name = "Hazard Engine"
+paths = ["/hazard-sim", "/hazard-sim/ws"]
+
+[services.development]
+run = "uv run --no-sync python -m uvicorn hazard_engine.main:app --app-dir artifacts/api-server --host 0.0.0.0 --port 8000"
+
+[services.production.run]
+args = ["uv", "run", "--no-sync", "python", "-m", "uvicorn", "hazard_engine.main:app", "--app-dir", "artifacts/api-server", "--host", "0.0.0.0", "--port", "8000"]

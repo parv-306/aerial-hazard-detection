@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: hazard
+    description: Simulation-only aerial hazard monitoring
 paths:
   /healthz:
     get:
@@ -24,6 +26,158 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /hazard/dashboard:
+    get:
+      operationId: getHazardDashboard
+      tags: [hazard]
+      summary: Get the current simulated operations dashboard
+      responses:
+        "200":
+          description: Dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HazardDashboard"
+  /hazard/grid:
+    get:
+      operationId: getHazardGrid
+      tags: [hazard]
+      summary: Get current grid cells
+      responses:
+        "200":
+          description: Current grid
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HazardCell"
+  /hazard/cells/{cellId}:
+    get:
+      operationId: getHazardCell
+      tags: [hazard]
+      summary: Get one grid cell
+      parameters:
+        - name: cellId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cell detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HazardCell"
+        "404":
+          description: Cell not found
+  /hazard/alerts:
+    get:
+      operationId: getHazardAlerts
+      tags: [hazard]
+      summary: Get recent simulation alerts
+      responses:
+        "200":
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HazardAlert"
+  /hazard/alerts/{alertId}/ack:
+    post:
+      operationId: acknowledgeHazardAlert
+      tags: [hazard]
+      summary: Acknowledge an alert
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcknowledgeAlertInput"
+      responses:
+        "200":
+          description: Acknowledged alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HazardAlert"
+        "404":
+          description: Alert not found
+  /hazard/network:
+    get:
+      operationId: getHazardNetworkStats
+      tags: [hazard]
+      summary: Get simulator network diagnostics
+      responses:
+        "200":
+          description: Network statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetworkStats"
+  /hazard/legacy/status:
+    get:
+      operationId: getLegacyPipelineStatus
+      tags: [hazard]
+      summary: Get legacy pipeline availability
+      responses:
+        "200":
+          description: Legacy pipeline status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegacyStatus"
+  /hazard/simulator/start:
+    post:
+      operationId: startHazardSimulator
+      tags: [hazard]
+      summary: Start simulated drone telemetry
+      responses:
+        "200":
+          description: Simulator status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulatorStatus"
+  /hazard/simulator/stop:
+    post:
+      operationId: stopHazardSimulator
+      tags: [hazard]
+      summary: Stop simulated drone telemetry
+      responses:
+        "200":
+          description: Simulator status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulatorStatus"
+  /hazard/simulator/corruption:
+    post:
+      operationId: setHazardSimulatorCorruption
+      tags: [hazard]
+      summary: Enable or disable optional demo packet corruption
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CorruptionInput"
+      responses:
+        "200":
+          description: Simulator status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulatorStatus"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +187,169 @@ components:
           type: string
       required:
         - status
+    SensorValues:
+      type: object
+      properties:
+        mq3Alcohol:
+          type: number
+        mq4Methane:
+          type: number
+        mq7CarbonMonoxide:
+          type: number
+        mq8Hydrogen:
+          type: number
+        mq9CarbonMonoxide:
+          type: number
+        mq135AirQuality:
+          type: number
+      required: [mq3Alcohol, mq4Methane, mq7CarbonMonoxide, mq8Hydrogen, mq9CarbonMonoxide, mq135AirQuality]
+    HazardCell:
+      type: object
+      properties:
+        id:
+          type: string
+        x:
+          type: integer
+        y:
+          type: integer
+        latitude:
+          type: number
+        longitude:
+          type: number
+        riskScore:
+          type: number
+        confidence:
+          type: number
+        prediction:
+          type: string
+        stale:
+          type: boolean
+        alertState:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+        sensors:
+          $ref: "#/components/schemas/SensorValues"
+        sensorUpdatedAt:
+          type: object
+          additionalProperties:
+            type: string
+            format: date-time
+            nullable: true
+      required: [id, x, y, latitude, longitude, riskScore, confidence, prediction, stale, alertState, updatedAt, sensors, sensorUpdatedAt]
+    HazardAlert:
+      type: object
+      properties:
+        id:
+          type: string
+        cellId:
+          type: string
+        state:
+          type: string
+        level:
+          type: integer
+        riskScore:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        acknowledgedAt:
+          type: ["string", "null"]
+          format: date-time
+        acknowledgedBy:
+          type: ["string", "null"]
+        notificationCount:
+          type: integer
+      required: [id, cellId, state, level, riskScore, createdAt, acknowledgedAt, acknowledgedBy, notificationCount]
+    NetworkStats:
+      type: object
+      properties:
+        received:
+          type: integer
+        valid:
+          type: integer
+        crcFailures:
+          type: integer
+        duplicates:
+          type: integer
+        reordered:
+          type: integer
+        estimatedLossPercent:
+          type: number
+        lastSequence:
+          type: ["integer", "null"]
+        generated:
+          type: integer
+        queueDrops:
+          type: integer
+        telemetryStorageFailures:
+          type: integer
+      required: [received, valid, crcFailures, duplicates, reordered, estimatedLossPercent, lastSequence, generated, queueDrops, telemetryStorageFailures]
+    HazardDashboard:
+      type: object
+      properties:
+        simulated:
+          type: boolean
+        simulatorRunning:
+          type: boolean
+        corruptionEnabled:
+          type: boolean
+        modelStatus:
+          type: string
+        activeAlertCount:
+          type: integer
+        cells:
+          type: array
+          items:
+            $ref: "#/components/schemas/HazardCell"
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/HazardAlert"
+        network:
+          $ref: "#/components/schemas/NetworkStats"
+        weather:
+          type: object
+          properties:
+            temperatureC:
+              type: number
+            windDirection:
+              type: string
+            windSpeedMps:
+              type: number
+          required: [temperatureC, windDirection, windSpeedMps]
+      required: [simulated, simulatorRunning, corruptionEnabled, modelStatus, activeAlertCount, cells, alerts, network, weather]
+    AcknowledgeAlertInput:
+      type: object
+      properties:
+        acknowledgedBy:
+          type: string
+          minLength: 1
+          maxLength: 80
+      required: [acknowledgedBy]
+    CorruptionInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+      required: [enabled]
+    LegacyStatus:
+      type: object
+      properties:
+        available:
+          type: boolean
+        message:
+          type: string
+      required: [available, message]
+    SimulatorStatus:
+      type: object
+      properties:
+        running:
+          type: boolean
+        corruptionEnabled:
+          type: boolean
+        message:
+          type: string
+      required: [running, corruptionEnabled, message]
 
